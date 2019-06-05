@@ -1,6 +1,8 @@
 use std::env;
 use std::fs::File;
 use std::io::Read;
+use std::cell::RefCell;
+
 
 struct ConditionCodes {
     z: u8,
@@ -20,14 +22,14 @@ pub struct State8080 {
     h: u8,
     l: u8,
     sp: u16,
-    pc: u16, // where we're up to in mem i think????
+    pc: std::vec::Vec<std::cell::RefCell<u16>>, // this is very likely wrong...
     memory: *mut u8,
     condition_codes: ConditionCodes,
     int_enable: u8,
 }
 
 impl State8080 {
-    pub fn new() -> State8080 {
+    pub fn new(mem: Vec<RefCell<u16>>) -> State8080 {
         State8080 {
             a: 0,
             b: 0,
@@ -37,7 +39,7 @@ impl State8080 {
             h: 0,
             l: 0,
             sp: 0,
-            pc: 0,
+            pc: mem,
             memory: std::ptr::null_mut(),
             condition_codes: ConditionCodes {
                 z: 0,
@@ -50,6 +52,14 @@ impl State8080 {
             int_enable: 0,
         }
     }
+
+    pub fn set_b(&mut self, v: u8) {
+        self.b = v;
+    }
+
+    pub fn set_c(&mut self, v: u8) {
+        self.c = v;
+    }
 }
 
 // fn unimplemented_instruction(instruction: &str) {
@@ -57,31 +67,35 @@ impl State8080 {
 //     std::process::exit(1);
 // }
 
-fn emulate_8080(state: &State8080, hex: &str) {
-    match &hex as &str {
-        "0" => (),
-        "1" => {}
+fn emulate_8080(state: &State8080, hex: u8) {
+    match &hex {
+        0x00 => (),
+        0x01 => {
+            state.set_c();
+            state.set_b();
+
+        }
         _ => (),
     }
 }
 
-
-// so this operates on the state, which we have as a struct.
-// pass in the struct? or is it like a global thing?
+// gets the opcode from state
+// how do i load our opcode into state. 
+//first hurdle yeah, really is getting my opcodes into state...
 
 fn main() {
-
     let filename = env::args().nth(1).expect("Please supply a filename");
     let mut file = File::open(&filename).unwrap();
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer).unwrap();
+    let mem = RefCell::new(&buffer[..]);
 
-    let state = State8080::new();
-    let mut position = 0;
-    let end_position = buffer.len();
-    while position < end_position {
-        let hex = &format!("{:x}", buffer[position]);
-        emulate_8080(&state, hex)
-    }
+    let mut state = State8080::new(mem);
+    // let mut position = 0;
+    // let end_position = buffer.len();
+    // while position < end_position {
+    //     let hex = &format!("{:x}", buffer[position]);
+    //     emulate_8080(&state, hex)
+    // }
     // unimplemented_instruction();
 }

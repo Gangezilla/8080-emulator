@@ -1,8 +1,7 @@
 use std::cell::RefCell;
+use std::env;
 use std::fs::File;
 use std::io::Read;
-use std::env;
-
 use std::rc::Rc;
 
 struct ConditionCodes {
@@ -40,7 +39,7 @@ impl State8080 {
             h: 0,
             l: 0,
             sp: 0,
-            pc: 0,
+            pc: 0x00,
             memory: mem,
             condition_codes: ConditionCodes {
                 z: 0,
@@ -91,7 +90,7 @@ impl Memory {
 }
 
 
-fn unimplemented_instruction(instruction: &u8) {
+fn unimplemented_instruction(instruction: u8) {
     eprintln!("Error: Unimplemented instruction ---- {:x}", instruction);
     std::process::exit(1);
 }
@@ -109,6 +108,24 @@ fn unimplemented_instruction(instruction: &u8) {
 //     //     _ => (),
 //     // }
 // }
+
+fn emulate_8080(state: &State8080, opcode: u8) {
+    match opcode {
+        0x00 => (),
+        // Arithmetic
+        0x80 => {
+            // ADD B
+
+        }
+        // Data Transfer
+        // Logical
+        // Branch
+        // Stack
+        // I/O
+        // Special
+        _ => unimplemented_instruction(opcode),
+    }
+}
 
 fn main() {
     let filename = env::args().nth(1).expect("Please supply a filename");
@@ -131,7 +148,7 @@ fn main() {
         while cycle < 10 {
             // cycle += emulate_8080(&state);
             let opcode = state.get_current_pc();
-            println!("{}", 0xopcode);
+            emulate_8080(&state, opcode);
             cycle += 1;
         }
     }

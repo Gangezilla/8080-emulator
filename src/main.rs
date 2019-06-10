@@ -4,8 +4,10 @@ use std::fs::File;
 use std::io::Read;
 use std::rc::Rc;
 
+extern crate assert_cli;
+
 struct ConditionCodes {
-    z: u8,  // Zerp F;ag
+    z: u8,  // Zero Flag
     s: u8,  // Sign Flag
     p: u8,  // Parity Flag
     cy: u8, // Carry Flag
@@ -67,7 +69,10 @@ impl State8080 {
         self.pc += 1;
         return opcode;
     }
+
+    fn alu_add(&mut self, n: u8) {}
 }
+
 
 pub struct Memory {
     pub data: Vec<u8>,
@@ -94,20 +99,6 @@ fn unimplemented_instruction(instruction: u8) {
     eprintln!("Error: Unimplemented instruction ---- {:x}", instruction);
     std::process::exit(1);
 }
-
-// fn emulate_8080(state: &State8080) { // needs to return u32 later
-//     let opcode = state.get_current_pc();
-//     println!("{}", opcode);
-//     // match &hex {
-//     //     0x00 => (),
-//     //     0x01 => {
-//     //         state.set_c();
-//     //         state.set_b();
-//     //         state.increment_pc(2);
-//     //     }
-//     //     _ => (),
-//     // }
-// }
 
 fn emulate_8080(state: &State8080, opcode: u8) {
     match opcode {
@@ -151,5 +142,18 @@ fn main() {
             emulate_8080(&state, opcode);
             cycle += 1;
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn calling_emulator_without_filename() {
+        assert_cli::Assert::main_binary().fails().unwrap();
+    }
+
+    fn alu_add_b() {
+        assert_eq!(2 + 2, 4);
     }
 }

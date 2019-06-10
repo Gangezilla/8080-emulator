@@ -5,3 +5,4 @@ authors = ["Scott <scottgangemi@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+assert_cli = "0.5.2"

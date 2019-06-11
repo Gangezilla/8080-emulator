@@ -58,12 +58,12 @@ impl State8080 {
         }
     }
 
-    pub fn set_b(&mut self, v: u8) {
-        self.b = v;
-    }
-
-    pub fn set_c(&mut self, v: u8) {
-        self.c = v;
+    fn set_flag(&mut self, flag: ConditionCodes, b: bool) {
+        if b {
+            self.condition_codes.flag = bit::set_bit(self.condition_codes.flag, flag as usize)
+        } else {
+            self.condition_codes.flag = bit::clear_bit(self.condition_codes.flag, flag as usize)
+        }
     }
 
     pub fn get_current_pc(&mut self) -> u8 {
@@ -76,7 +76,8 @@ impl State8080 {
     fn alu_add(&mut self, n: u8) {
         let a = self.a;
         let result = a.wrapping_add(n);
-        self.set_flag(ConditionCodes::z, bit::get_bit(result, 7));
+        self.set_flag(ConditionCodes::z, bit::get_bit(result, 7)); // 7 because we're getting the most significant bit
+
     }
 }
 

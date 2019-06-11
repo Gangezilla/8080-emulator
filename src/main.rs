@@ -4,6 +4,9 @@ use std::fs::File;
 use std::io::Read;
 use std::rc::Rc;
 
+mod bit;
+mod memory;
+
 extern crate assert_cli;
 
 struct ConditionCodes {
@@ -25,13 +28,13 @@ pub struct State8080 {
     l: u8,
     sp: u16,
     pc: u16,
-    memory: Rc<RefCell<Memory>>,
+    memory: Rc<RefCell<memory::Memory>>,
     condition_codes: ConditionCodes,
     int_enable: u8,
 }
 
 impl State8080 {
-    pub fn new(mem: Rc<RefCell<Memory>>) -> State8080 {
+    pub fn new(mem: Rc<RefCell<memory::Memory>>) -> State8080 {
         State8080 {
             a: 0,
             b: 0,
@@ -70,27 +73,10 @@ impl State8080 {
         return opcode;
     }
 
-    fn alu_add(&mut self, n: u8) {}
-}
-
-
-pub struct Memory {
-    pub data: Vec<u8>,
-}
-
-impl Memory {
-    fn get(&self, a: u16) -> u8 {
-        self.data[usize::from(a)]
-    }
-
-    fn set(&mut self, a: u16, v: u8) {
-        self.data[usize::from(a)] = v
-    }
-
-    pub fn new() -> Self {
-        Self {
-            data: vec![0; 65536],
-        }
+    fn alu_add(&mut self, n: u8) {
+        let a = self.a;
+        let result = a.wrapping_add(n);
+        self.set_flag(ConditionCodes::z, bit::get_bit(result, 7));
     }
 }
 
@@ -120,7 +106,7 @@ fn emulate_8080(state: &State8080, opcode: u8) {
 
 fn main() {
     let filename = env::args().nth(1).expect("Please supply a filename");
-    let mem = Rc::new(RefCell::new(Memory::new()));
+    let mem = Rc::new(RefCell::new(memory::Memory::new()));
     let mut file = File::open(&filename).unwrap();
     let mut buf = Vec::new();
     file.read_to_end(&mut buf).unwrap();
@@ -151,9 +137,5 @@ mod tests {
     #[test]
     fn calling_emulator_without_filename() {
         assert_cli::Assert::main_binary().fails().unwrap();
-    }
-
-    fn alu_add_b() {
-        assert_eq!(2 + 2, 4);
     }
 }

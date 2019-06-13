@@ -9,13 +9,38 @@ mod memory;
 
 extern crate assert_cli;
 
-struct ConditionCodes {
-    z: u8,  // Zero Flag
-    s: u8,  // Sign Flag
-    p: u8,  // Parity Flag
-    cy: u8, // Carry Flag
-    ac: u8, // Auxilary Carry Flag
-    pad: u8,
+struct Flag {
+    z: bool,  // Zero Flag
+    s: bool,  // Sign Flag
+    p: bool,  // Parity Flag
+    cy: bool, // Carry Flag
+    ac: bool, // Auxilary Carry Flag
+    pad: bool,
+}
+
+impl Flag {
+    pub fn new() -> Flag {
+        Flag {
+                z: false,
+                s: false,
+                p: false,
+                cy: false,
+                ac: false,
+                pad: false,
+            }
+    }
+
+    // pub fn set_flag(&mut self, flag: Flag, b: bool) {
+    //     if b {
+    //         self.flag = bit::set_bit(self.flag, flag as usize)
+    //     } else {
+    //         self.flag = bit::clear_bit(self.flag, flag as usize)
+    //     }
+    // }
+
+    pub fn set_z(&mut self, value: bool) {
+        self.z = value;
+    }
 }
 
 pub struct State8080 {
@@ -29,7 +54,6 @@ pub struct State8080 {
     sp: u16,
     pc: u16,
     memory: Rc<RefCell<memory::Memory>>,
-    condition_codes: ConditionCodes,
     int_enable: u8,
 }
 
@@ -46,23 +70,7 @@ impl State8080 {
             sp: 0,
             pc: 0x00,
             memory: mem,
-            condition_codes: ConditionCodes {
-                z: 0,
-                s: 0,
-                p: 0,
-                cy: 0,
-                ac: 0,
-                pad: 0,
-            },
             int_enable: 0,
-        }
-    }
-
-    fn set_flag(&mut self, flag: ConditionCodes, b: bool) {
-        if b {
-            self.condition_codes.flag = bit::set_bit(self.condition_codes.flag, flag as usize)
-        } else {
-            self.condition_codes.flag = bit::clear_bit(self.condition_codes.flag, flag as usize)
         }
     }
 
@@ -73,10 +81,11 @@ impl State8080 {
         return opcode;
     }
 
-    fn alu_add(&mut self, n: u8) {
+    fn alu_add(&mut self, flag: &Flag, byte: u8) {
         let a = self.a;
-        let result = a.wrapping_add(n);
-        self.set_flag(ConditionCodes::z, bit::get_bit(result, 7)); // 7 because we're getting the most significant bit
+        let result = a.wrapping_add(byte);
+        &flag.set_z(bit::get_bit(result, 7));
+        // flag.set_flag('z', bit::get_bit(result, 7)); // 7 because we're getting the most significant bit
 
     }
 }
@@ -87,13 +96,13 @@ fn unimplemented_instruction(instruction: u8) {
     std::process::exit(1);
 }
 
-fn emulate_8080(state: &State8080, opcode: u8) {
+fn emulate_8080(state: &State8080, flag: &Flag, opcode: u8) {
     match opcode {
         0x00 => (),
         // Arithmetic
         0x80 => {
             // ADD B
-
+            state.alu_add(&flag, state.b)
         }
         // Data Transfer
         // Logical
@@ -114,6 +123,7 @@ fn main() {
     mem.borrow_mut().data[0x00..buf.len()].clone_from_slice(&buf[..]);
 
     let mut state = State8080::new(mem.clone());
+    let mut flag = Flag::new();
 
     loop {
         let mut cycle = 0;
@@ -126,7 +136,7 @@ fn main() {
         while cycle < 10 {
             // cycle += emulate_8080(&state);
             let opcode = state.get_current_pc();
-            emulate_8080(&state, opcode);
+            emulate_8080(&state, &flag, opcode);
             cycle += 1;
         }
     }
